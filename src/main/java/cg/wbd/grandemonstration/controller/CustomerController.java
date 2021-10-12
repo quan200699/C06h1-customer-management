@@ -2,21 +2,20 @@ package cg.wbd.grandemonstration.controller;
 
 import cg.wbd.grandemonstration.model.Customer;
 import cg.wbd.grandemonstration.service.CustomerService;
-import cg.wbd.grandemonstration.service.impl.SimpleCustomerServiceImpl;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.List;
 
 @Controller
+@RequestMapping("/customer")
 public class CustomerController {
-    private CustomerService customerService = new SimpleCustomerServiceImpl();
+    @Autowired
+    private CustomerService customerService;
 
-    @GetMapping("/customer/list")
+    @GetMapping("/list")
     public ModelAndView showCustomerList() {
         ModelAndView modelAndView = new ModelAndView("customers/list");
         List<Customer> customers = customerService.findAll();
@@ -24,7 +23,9 @@ public class CustomerController {
         return modelAndView;
     }
 
-    @GetMapping("/customer/{id}")
+    // /customer => cho list
+    // /customer/1 => sẽ bị báo lỗi là trùng mapping
+    @GetMapping("/{id}")
     public ModelAndView showCustomerDetail(@PathVariable Long id) {
         ModelAndView modelAndView = new ModelAndView("customers/info");
         Customer customer = customerService.findOne(id);
@@ -32,22 +33,35 @@ public class CustomerController {
         return modelAndView;
     }
 
-    @PostMapping("/customer/edit/{id}")
+    @PostMapping("/edit/{id}")
     public ModelAndView updateCustomer(@PathVariable Long id,
-                                       @RequestParam("name") String name,
-                                       @RequestParam("email") String email,
-                                       @RequestParam("address") String address) {
-        Customer customer = customerService.findOne(id);
-        if (customer == null) {
+                                       @ModelAttribute(name = "customer") Customer customer) {
+        Customer oldCustomer = customerService.findOne(id);
+        if (oldCustomer == null) {
             return new ModelAndView("error-404");
-        }else {
-            customer.setName(name);
-            customer.setAddress(address);
-            customer.setEmail(email);
+        } else {
+            oldCustomer.setName(customer.getName());
+            oldCustomer.setAddress(customer.getAddress());
+            oldCustomer.setEmail(customer.getEmail());
             customerService.save(customer);
-            ModelAndView modelAndView =  new ModelAndView("customers/info");
-            modelAndView.addObject("customer", customer);
+            ModelAndView modelAndView = new ModelAndView("customers/info");
+            modelAndView.addObject("customer", oldCustomer);
             return modelAndView;
         }
+    }
+
+    @GetMapping("/create")
+    public ModelAndView showCreateForm() {
+        ModelAndView modelAndView = new ModelAndView("customers/create");
+        modelAndView.addObject("customer", new Customer());
+        return modelAndView;
+    }
+
+    @PostMapping("/create")
+    public ModelAndView createCustomer(@ModelAttribute(name = "customer") Customer customer) {
+        customerService.save(customer);
+        ModelAndView modelAndView = new ModelAndView("customers/create");
+        modelAndView.addObject("customer", new Customer());
+        return modelAndView;
     }
 }

@@ -8,6 +8,7 @@
         border: 1px dotted #555;
     }
 </style>
+<a href="/customer/create">Create customer</a>.
 There are ${customers.size()} customer(s) in list.
 <table>
     <caption>Customers List</caption>
